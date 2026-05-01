@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한자 마스터 RPG ⚔️</title>
+<style>
+  /* ===================================
+     전체 테마 & CSS 변수 정의
+     =================================== */
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+  :root {
+    --bg-dark: #0d0a1a;
+    --bg-panel: #1a1530;
+    --bg-card: #231e3d;
+    --accent-gold: #f5c842;
+    --accent-red: #e84343;
+    --accent-blue: #4a9eff;
+    --accent-green: #4ecb71;
+    --accent-purple: #9b59b6;
+    --text-main: #f0e6d3;
+    --text-dim: #8a7fa0;
+    --border: #3a2f5a;
+    --hp-color: #e84343;
+    --exp-color: #4a9eff;
+    --monster-hp: #e84343;
+    --shadow-glow: 0 0 20px rgba(245, 200, 66, 0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(74, 158, 255, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(155, 89, 182, 0.05) 0%, transparent 50%);
+  }
+
+  /* ===================================
+     시작 화면 (Start Screen)
+     =================================== */
+  #start-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    text-align: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 50% 30%, rgba(245, 200, 66, 0.08) 0%, transparent 60%);
+  }
+
+  .start-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    color: var(--accent-gold);
+    text-shadow: 0 0 40px rgba(245, 200, 66, 0.6);
+    margin-bottom: 10px;
+    animation: titlePulse 2s ease-in-out infinite;
+  }
+
+  .start-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin-bottom: 50px;
+    letter-spacing: 3px;
+  }
+
+  .start-hanja-display {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(4rem, 12vw, 8rem);
+    font-weight: 900;
+    color: var(--accent-gold);
+    text-shadow: 0 0 60px rgba(245, 200, 66, 0.5);
+    margin-bottom: 40px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, var(--accent-gold), #e6a800);
+    color: var(--bg-dark);
+    border: none;
+    padding: 18px 60px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(245, 200, 66, 0.4);
+    letter-spacing: 2px;
+  }
+
+  .start-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 50px rgba(245, 200, 66, 0.7);
+  }
+
+  /* ===================================
+     메인 게임 화면
+     =================================== */
+  #game-screen {
+    display: none;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px;
+    min-height: 100vh;
+    gap: 10px;
+  }
+
+  /* ===================================
+     상단: 플레이어 상태바
+     =================================== */
+  .player-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .player-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .player-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .level-badge {
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .bar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-hp { background: linear-gradient(90deg, #e84343, #ff6b6b); }
+  .bar-exp { background: linear-gradient(90deg, #4a9eff, #7ab8ff); }
+
+  /* ===================================
+     중앙: 몬스터 영역
+     =================================== */
+  .monster-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .monster-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(232, 67, 67, 0.07) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .monster-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-red);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .monster-sprite {
+    font-size: clamp(4rem, 15vw, 6rem);
+    margin: 8px 0;
+    display: block;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 20px rgba(232, 67, 67, 0.4));
+  }
+
+  .monster-hp-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .monster-hp-bar .bar-fill {
+    background: linear-gradient(90deg, #e84343, #ff6b6b);
+  }
+
+  /* 전투 로그 (피드백 메시지) */
+  .battle-log {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    opacity: 0;
+  }
+
+  .battle-log.show { opacity: 1; }
+  .battle-log.correct { background: rgba(78, 203, 113, 0.2); color: var(--accent-green); border: 1px solid rgba(78, 203, 113, 0.4); }
+  .battle-log.wrong { background: rgba(232, 67, 67, 0.2); color: var(--accent-red); border: 1px solid rgba(232, 67, 67, 0.4); }
+  .battle-log.info { background: rgba(74, 158, 255, 0.2); color: var(--accent-blue); border: 1px solid rgba(74, 158, 255, 0.4); }
+
+  /* ===================================
+     하단: 문제 & 선택지
+     =================================== */
+  .question-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .question-type-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    align-self: flex-start;
+  }
+
+  .badge-basic { background: rgba(74, 158, 255, 0.2); color: var(--accent-blue); border: 1px solid rgba(74,158,255,0.4); }
+  .badge-word { background: rgba(245, 200, 66, 0.2); color: var(--accent-gold); border: 1px solid rgba(245,200,66,0.4); }
+  .badge-context { background: rgba(155, 89, 182, 0.2); color: var(--accent-purple); border: 1px solid rgba(155,89,182,0.4); }
+  .badge-boss { background: rgba(232, 67, 67, 0.2); color: var(--accent-red); border: 1px solid rgba(232,67,67,0.4); }
+
+  .question-hanja {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(2.5rem, 10vw, 3.5rem);
+    font-weight: 900;
+    color: var(--accent-gold);
+    text-align: center;
+    text-shadow: 0 0 30px rgba(245, 200, 66, 0.4);
+    line-height: 1;
+  }
+
+  .question-text {
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text-main);
+    line-height: 1.5;
+  }
+
+  .choices-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .choice-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    color: var(--text-main);
+    padding: 14px 10px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--accent-gold);
+    background: rgba(245, 200, 66, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .choice-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+  .choice-btn.correct-ans { border-color: var(--accent-green) !important; background: rgba(78, 203, 113, 0.2) !important; color: var(--accent-green) !important; }
+  .choice-btn.wrong-ans { border-color: var(--accent-red) !important; background: rgba(232, 67, 67, 0.2) !important; color: var(--accent-red) !important; }
+
+  /* ===================================
+     게임 오버 화면
+     =================================== */
+  #gameover-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .gameover-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 900;
+    color: var(--accent-red);
+    text-shadow: 0 0 40px rgba(232, 67, 67, 0.7);
+    animation: shake 0.5s ease;
+  }
+
+  .gameover-stats {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 40px;
+    font-size: 1rem;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+
+  .gameover-stats span {
+    color: var(--accent-gold);
+    font-weight: 700;
+  }
+
+  .restart-btn {
+    background: linear-gradient(135deg, var(--accent-red), #c0392b);
+    color: white;
+    border: none;
+    padding: 16px 50px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(232, 67, 67, 0.4);
+  }
+
+  .restart-btn:hover { transform: scale(1.05); }
+
+  /* ===================================
+     레벨업 오버레이
+     =================================== */
+  #levelup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .levelup-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(2.5rem, 10vw, 5rem);
+    font-weight: 900;
+    color: var(--accent-gold);
+    text-shadow: 0 0 60px rgba(245, 200, 66, 0.8);
+    animation: levelupPop 0.6s ease;
+  }
+
+  .levelup-desc {
+    font-size: 1rem;
+    color: var(--text-main);
+    background: var(--bg-panel);
+    padding: 12px 30px;
+    border-radius: 12px;
+    border: 1px solid var(--accent-gold);
+  }
+
+  /* ===================================
+     연승 카운터
+     =================================== */
+  .streak-display {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .streak-count {
+    color: var(--accent-gold);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  /* ===================================
+     키프레임 애니메이션
+     =================================== */
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 40px rgba(245, 200, 66, 0.6); }
+    50% { text-shadow: 0 0 80px rgba(245, 200, 66, 1); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+  }
+
+  @keyframes monsterHit {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(12px); }
+    50% { transform: translateX(-8px); }
+    75% { transform: translateX(5px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes playerHit {
+    0%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+  }
+
+  @keyframes levelupPop {
+    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  @keyframes correctFlash {
+    0%, 100% { background: var(--bg-panel); }
+    50% { background: rgba(78, 203, 113, 0.15); }
+  }
+
+  .monster-shake { animation: monsterHit 0.4s ease; }
+  .player-flash { animation: playerHit 0.6s ease; }
+  .panel-flash { animation: correctFlash 0.4s ease; }
+
+  /* ===================================
+     반응형
+     =================================== */
+  @media (max-width: 360px) {
+    .choices-grid { grid-template-columns: 1fr; }
+    .choice-btn { padding: 12px; }
+  }
+
+  /* 스크롤바 스타일 */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg-dark); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ===================================
+     🎉 엔딩 화면 (Lv.10 클리어)
+     =================================== */
+  #ending-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(245,200,66,0.18) 0%, #0d0a1a 70%);
+    align-items: center;
+    justify-content: center;
+    z-index: 70;
+    flex-direction: column;
+    text-align: center;
+    gap: 18px;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .ending-trophy { font-size: clamp(3rem, 12vw, 6rem); animation: float 2.5s ease-in-out infinite; }
+  .ending-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(1.8rem, 6vw, 3rem);
+    font-weight: 900;
+    color: var(--accent-gold);
+    text-shadow: 0 0 60px rgba(245,200,66,0.9);
+    animation: titlePulse 1.8s ease-in-out infinite;
+    line-height: 1.3;
+  }
+  .ending-subtitle { font-size: 1rem; color: var(--text-dim); letter-spacing: 2px; }
+  .ending-stats {
+    background: var(--bg-panel);
+    border: 2px solid var(--accent-gold);
+    border-radius: 20px;
+    padding: 20px 36px;
+    font-size: 1rem;
+    color: var(--text-main);
+    line-height: 2.2;
+    box-shadow: 0 0 30px rgba(245,200,66,0.2);
+  }
+  .ending-stats span { color: var(--accent-gold); font-weight: 700; font-size: 1.1rem; }
+  .ending-hanjas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 400px; }
+  .ending-hanja-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-gold);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1rem;
+    color: var(--accent-gold);
+    font-weight: 700;
+  }
+  .ending-btn {
+    background: linear-gradient(135deg, var(--accent-gold), #e6a800);
+    color: var(--bg-dark);
+    border: none;
+    padding: 16px 50px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(245,200,66,0.5);
+    margin-top: 4px;
+  }
+  .ending-btn:hover { transform: scale(1.05); }
+
+  /* 닉네임 입력창 */
+  .nickname-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .nickname-label {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  .nickname-input {
+    background: var(--bg-panel);
+    border: 2px solid var(--border);
+    color: var(--text-main);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px 24px;
+    border-radius: 50px;
+    outline: none;
+    width: 260px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    letter-spacing: 2px;
+  }
+  .nickname-input::placeholder { color: var(--text-dim); font-weight: 400; letter-spacing: 1px; }
+  .nickname-input:focus {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 20px rgba(245,200,66,0.25);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===========================
+     🎮 시작 화면
+     =========================== -->
+<div id="start-screen">
+  <div class="start-hanja-display">漢字</div>
+  <div class="start-title">⚔️ 한자 마스터 RPG</div>
+  <div class="start-subtitle">✦ 한자를 배우며 몬스터를 무찔러라 ✦</div>
+  <div class="nickname-wrap">
+    <label class="nickname-label" for="nickname-input">🧙 용사의 이름을 입력하세요</label>
+    <input
+      type="text"
+      id="nickname-input"
+      class="nickname-input"
+      maxlength="8"
+      placeholder="이름 입력 (최대 8자)"
+      onkeydown="if(event.key==='Enter') startGame()"
+    >
+  </div>
+  <button class="start-btn" onclick="startGame()">🗡️ 모험 시작!</button>
+</div>
+
+<!-- ===========================
+     🎮 메인 게임 화면
+     =========================== -->
+<div id="game-screen">
+
+  <!-- 📊 상단: 플레이어 상태 -->
+  <div class="player-panel" id="player-panel">
+    <div class="player-top-row">
+      <div class="player-name">
+        🧙 <span id="player-nickname">용사</span>
+        <span class="level-badge" id="level-display">Lv.1</span>
+      </div>
+      <div class="streak-display">
+        🔥 연속 정답: <span class="streak-count" id="streak-display">0</span>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-label">
+          <span>❤️ HP</span>
+          <span id="hp-text">100 / 100</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill bar-hp" id="hp-bar" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">
+          <span>⭐ EXP</span>
+          <span id="exp-text">0 / 50</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill bar-exp" id="exp-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 👹 중앙: 몬스터 영역 -->
+  <div class="monster-panel">
+    <div class="monster-name" id="monster-name">로딩중...</div>
+    <span class="monster-sprite" id="monster-sprite">👺</span>
+    <div class="monster-hp-label">
+      <span>👹 몬스터 HP</span>
+      <span id="monster-hp-text">50 / 50</span>
+    </div>
+    <div class="bar-track monster-hp-bar">
+      <div class="bar-fill" id="monster-hp-bar" style="width:100%"></div>
+    </div>
+    <div class="battle-log" id="battle-log">준비 중...</div>
+  </div>
+
+  <!-- ❓ 하단: 문제 & 선택지 -->
+  <div class="question-panel" id="question-panel">
+    <span class="question-type-badge badge-basic" id="q-type-badge">📖 기본 문제</span>
+    <div class="question-hanja" id="q-hanja"></div>
+    <div class="question-text" id="q-text">문제를 불러오는 중...</div>
+    <div class="choices-grid" id="choices-grid">
+      <!-- 선택지 버튼은 JS로 동적 생성 -->
+    </div>
+  </div>
+
+</div>
+
+<!-- ===========================
+     🎉 엔딩 화면 (Lv.10 클리어)
+     =========================== -->
+<div id="ending-screen">
+  <div class="ending-trophy">🏆</div>
+  <div class="ending-title">한자 마스터<br>달성!</div>
+  <div class="ending-subtitle">✦ 25개 한자를 모두 정복했습니다 ✦</div>
+  <div class="ending-stats">
+    최종 레벨: <span>Lv.10</span><br>
+    처치한 몬스터: <span id="ending-kills">0</span>마리<br>
+    최대 연속 정답: <span id="ending-streak">0</span>회<br>
+    배운 한자: <span>25자</span>
+  </div>
+  <div class="ending-hanjas" id="ending-hanjas"></div>
+  <button class="ending-btn" onclick="restartGame()">🔄 처음부터 다시!</button>
+</div>
+
+<!-- ===========================
+     💀 게임 오버 화면
+     =========================== -->
+<div id="gameover-screen">
+  <div class="gameover-title">💀 게임 오버</div>
+  <div class="gameover-stats">
+    도달 레벨: <span id="final-level">1</span><br>
+    처치한 몬스터: <span id="final-kills">0</span>마리<br>
+    최대 연속 정답: <span id="final-streak">0</span>회
+  </div>
+  <button class="restart-btn" onclick="restartGame()">🔄 다시 도전!</button>
+</div>
+
+<!-- ===========================
+     ✨ 레벨업 오버레이
+     =========================== -->
+<div id="levelup-overlay">
+  <div class="levelup-text">🎉 LEVEL UP!</div>
+  <div class="levelup-desc" id="levelup-desc">레벨이 올랐습니다!</div>
+</div>
+
+<!-- ===========================
+     🔊 오디오 (Web Audio API)
+     =========================== -->
+<script>
+/* ===================================================
+   🔊 사운드 시스템 (Web Audio API - 외부 파일 없음)
+   =================================================== */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+// AudioContext는 사용자 인터랙션 후 초기화 (브라우저 정책)
+function initAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new AudioCtx(); } catch(e) { audioCtx = null; }
+  }
+}
+
+// 비프음 생성 함수 (type: 'correct' | 'wrong' | 'levelup' | 'kill')
+function playSound(type) {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g);
+  g.connect(audioCtx.destination);
+
+  const t = audioCtx.currentTime;
+
+  if (type === 'correct') {
+    // 정답: 밝고 경쾌한 상승음
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.exponentialRampToValueAtTime(660, t + 0.15);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    o.start(t); o.stop(t + 0.25);
+  } else if (type === 'wrong') {
+    // 오답: 낮고 무거운 하강음
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(300, t);
+    o.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.start(t); o.stop(t + 0.3);
+  } else if (type === 'levelup') {
+    // 레벨업: 화려한 팡파레
+    const freqs = [262, 330, 392, 523];
+    freqs.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      const start = t + i * 0.1;
+      gain.gain.setValueAtTime(0.25, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+      osc.start(start); osc.stop(start + 0.3);
+    });
+  } else if (type === 'kill') {
+    // 몬스터 처치: 승리 효과음
+    o.frequency.setValueAtTime(523, t);
+    o.frequency.exponentialRampToValueAtTime(784, t + 0.1);
+    o.frequency.exponentialRampToValueAtTime(1046, t + 0.2);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    o.start(t); o.stop(t + 0.35);
+  }
+}
+
+/* ===================================================
+   📚 한자 데이터베이스
+   각 항목: { hanja, meaning, words, wrongWords }
+   words = 이 한자가 쓰인 올바른 단어들
+   wrongWords = 동음이의/혼동 단어들 (함정용)
+   =================================================== */
+const hanjaDB = [
+  // ✅ 수요일(水曜日)은 물 수(水) 맞으므로 wrongWords에서 제거
+  { hanja: "水", meaning: "물", words: ["수영", "수돗물", "수자원", "수분", "수요일"], wrongWords: ["수학", "수업", "수상"] },
+  // ✅ 화요일(火曜日)은 불 화(火) 맞으므로 wrongWords에서 제거
+  { hanja: "火", meaning: "불", words: ["화재", "화산", "화염", "화력", "화요일"], wrongWords: ["화장실", "화면", "화분"] },
+  // ✅ 목요일(木曜日)은 나무 목(木) 맞으므로 wrongWords에서 제거
+  { hanja: "木", meaning: "나무", words: ["목재", "목공", "수목", "목조", "목요일"], wrongWords: ["목욕", "목표", "목소리"] },
+  // ✅ 산책(散策)의 산은 뫼 산이 아니므로 words에서 제거
+  { hanja: "山", meaning: "산", words: ["산악", "산림", "화산", "등산"], wrongWords: ["산책", "산업", "산소"] },
+  // ✅ 일요일(日曜日)은 해 일(日) 맞으므로 wrongWords에서 제거
+  { hanja: "日", meaning: "해/날", words: ["일출", "일몰", "일기", "매일", "일요일"], wrongWords: ["일등", "일하다", "일찍"] },
+  // ✅ 월요일(月曜日)은 달 월(月) 맞으므로 wrongWords에서 제거
+  { hanja: "月", meaning: "달", words: ["월출", "세월", "월광", "일월", "월요일", "월급"], wrongWords: ["월드", "월세", "월세금"] },
+  // ✅ 토요일(土曜日)은 흙 토(土) 맞으므로 wrongWords에서 제거 / 흑토→황토(오타 수정)
+  { hanja: "土", meaning: "흙", words: ["토양", "토지", "황토", "토건", "토요일"], wrongWords: ["토론", "토마토", "토끼"] },
+  // ✅ 금요일(金曜日)은 쇠 금(金) 맞으므로 wrongWords에서 제거
+  { hanja: "金", meaning: "금/쇠", words: ["금속", "금메달", "황금", "금은", "금요일"], wrongWords: ["금지", "금방", "금세"] },
+  { hanja: "人", meaning: "사람", words: ["인간", "인류", "인물", "인구"], wrongWords: ["인터넷", "인형", "인정"] },
+  { hanja: "大", meaning: "크다", words: ["대형", "대국", "대학", "대문"], wrongWords: ["대답", "대신", "대화"] },
+  // ✅ 소문(所聞)의 소는 바 소(所)이므로 words에서 제거
+  { hanja: "小", meaning: "작다", words: ["소형", "소국", "소도시", "소인"], wrongWords: ["소문", "소리", "소년", "소개"] },
+  { hanja: "上", meaning: "위", words: ["상층", "상단", "지상", "옥상"], wrongWords: ["상자", "상점", "상황"] },
+  { hanja: "下", meaning: "아래", words: ["하층", "하단", "지하", "낙하"], wrongWords: ["하나", "하루", "하늘"] },
+  { hanja: "心", meaning: "마음", words: ["심장", "진심", "심리", "관심"], wrongWords: ["심부름", "심각", "심사"] },
+  { hanja: "力", meaning: "힘", words: ["능력", "체력", "동력", "전력"], wrongWords: ["역할", "역사", "역시"] },
+  { hanja: "天", meaning: "하늘", words: ["천국", "천사", "천문", "천재지변"], wrongWords: ["천원", "천천히", "천재"] },
+  // ✅ 지도(地圖)의 지는 땅 지(地) 맞으므로 words에 추가 / wrongWords에서 제거
+  { hanja: "地", meaning: "땅", words: ["지구", "토지", "지면", "지하", "지도"], wrongWords: ["지금", "지갑", "지붕"] },
+  { hanja: "東", meaning: "동쪽", words: ["동쪽", "동방", "동해", "동풍"], wrongWords: ["동생", "동물", "동네"] },
+  { hanja: "西", meaning: "서쪽", words: ["서쪽", "서방", "서해", "서풍"], wrongWords: ["서울", "서점", "서류"] },
+  { hanja: "南", meaning: "남쪽", words: ["남쪽", "남방", "남해", "남풍"], wrongWords: ["남자", "남동생", "남은"] },
+  { hanja: "北", meaning: "북쪽", words: ["북쪽", "북방", "북해", "북풍"], wrongWords: ["북한", "북적", "북어"] },
+  { hanja: "風", meaning: "바람", words: ["태풍", "강풍", "선풍기", "풍경"], wrongWords: ["풍선", "풍부", "풍자"] },
+  { hanja: "雨", meaning: "비", words: ["우산", "우기", "강우", "호우"], wrongWords: ["우리", "우유", "우체국"] },
+  { hanja: "花", meaning: "꽃", words: ["화원", "화단", "개화", "낙화"], wrongWords: ["화가", "화나다", "화려"] },
+  { hanja: "草", meaning: "풀", words: ["초원", "잡초", "초목", "초식"], wrongWords: ["초등학교", "초콜릿", "초저녁"] },
+];
+
+/* ===================================================
+   👹 몬스터 설정
+   =================================================== */
+const monsterTypes = [
+  { name: "슬라임",    sprite: "🟢", baseHp: 30 },
+  { name: "고블린",   sprite: "👺", baseHp: 45 },
+  { name: "해골",     sprite: "💀", baseHp: 60 },
+  { name: "마왕",     sprite: "👿", baseHp: 80 },
+  { name: "드래곤",   sprite: "🐉", baseHp: 100 },
+  { name: "악마",     sprite: "😈", baseHp: 120 },
+];
+
+const elementPrefixes = ["불의", "물의", "번개의", "얼음의", "바람의", "어둠의", "빛의", "독의"];
+
+/* ===================================================
+   🎮 게임 상태 (State)
+   플레이어와 몬스터의 현재 상태를 담는 객체
+   =================================================== */
+let player = {
+  hp: 100,
+  maxHp: 100,
+  attack: 30,
+  level: 1,
+  exp: 0,
+  expToNext: 50,
+};
+
+let monster = {
+  name: "",
+  sprite: "",
+  hp: 0,
+  maxHp: 0,
+  attack: 10,
+};
+
+let currentQuestion = null;  // 현재 출제된 문제
+let isAnswering = true;       // 현재 답변 가능 상태인지
+let killCount = 0;            // 처치한 몬스터 수
+let streak = 0;               // 연속 정답 수
+let maxStreak = 0;            // 최대 연속 정답 수
+
+/* ===================================================
+   💾 저장 / 불러오기 (localStorage)
+   =================================================== */
+function saveProgress() {
+  try {
+    localStorage.setItem('hanjaRPG_save', JSON.stringify({
+      level: player.level,
+      exp: player.exp,
+      expToNext: player.expToNext,
+      maxHp: player.maxHp,
+      attack: player.attack,
+      killCount: killCount
+    }));
+  } catch(e) { /* 저장 실패 시 무시 */ }
+}
+
+function loadProgress() {
+  try {
+    const data = JSON.parse(localStorage.getItem('hanjaRPG_save'));
+    if (data) {
+      player.level = data.level || 1;
+      player.exp = data.exp || 0;
+      player.expToNext = data.expToNext || 50;
+      player.maxHp = data.maxHp || 100;
+      player.hp = player.maxHp; // 새 세션 시작 시 HP 풀 회복
+      player.attack = data.attack || 30;
+      killCount = data.killCount || 0;
+    }
+  } catch(e) { /* 불러오기 실패 시 기본값 사용 */ }
+}
+
+function clearProgress() {
+  try { localStorage.removeItem('hanjaRPG_save'); } catch(e) {}
+}
+
+/* ===================================================
+   🎲 유틸리티 함수들
+   =================================================== */
+
+// 배열에서 랜덤 요소 반환
+function getRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// 배열을 무작위 순서로 섞기 (Fisher-Yates shuffle)
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 중복 없이 다른 한자 n개 가져오기
+function getOtherHanja(exclude, count) {
+  return hanjaDB.filter(h => h !== exclude)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count);
+}
+
+/* ===================================================
+   ❓ 문제 생성 함수들 (4가지 유형)
+   =================================================== */
+
+// 유형 1: 기본 - 한자의 뜻 맞히기
+function makeBasicQuestion() {
+  const h = getRandom(hanjaDB);
+  const others = getOtherHanja(h, 3);
+  return {
+    type: "basic",
+    typeName: "📖 뜻 맞히기",
+    badgeClass: "badge-basic",
+    hanjaDisplay: h.hanja,
+    question: `위 한자의 뜻은 무엇일까요?`,
+    choices: shuffle([h.meaning, ...others.map(o => o.meaning)]),
+    answer: h.meaning,
+  };
+}
+
+// 유형 2: 단어 속 한자 - 틀린 단어 고르기 (핵심 함정 유형!)
+function makeWordCheckQuestion() {
+  const h = getRandom(hanjaDB);
+  const correctWords = shuffle(h.words).slice(0, 3);
+  // wrongWords가 없으면 다른 한자의 단어로 대체
+  const wrongPool = h.wrongWords.length > 0 ? h.wrongWords : getRandom(getOtherHanja(h, 1)).words;
+  const wrongWord = getRandom(wrongPool);
+
+  return {
+    type: "word_check",
+    typeName: "🔍 함정 단어 찾기",
+    badgeClass: "badge-word",
+    hanjaDisplay: h.hanja + "\n" + `(뜻: ${h.meaning})`,
+    question: `'${h.hanja}'(${h.meaning})이 쓰이지 않은 단어는?`,
+    choices: shuffle([...correctWords, wrongWord]),
+    answer: wrongWord,
+  };
+}
+
+// 유형 3: 문맥 추론 - 단어에서 한자 의미 파악
+function makeContextQuestion() {
+  const h = getRandom(hanjaDB);
+  const word = getRandom(h.words);
+  const others = getOtherHanja(h, 3);
+
+  return {
+    type: "context",
+    typeName: "🧠 뜻 추론",
+    badgeClass: "badge-context",
+    hanjaDisplay: `"${word}"`,
+    question: `위 단어에서 '${h.hanja}'의 뜻은?`,
+    choices: shuffle([h.meaning, ...others.map(o => o.meaning)]),
+    answer: h.meaning,
+  };
+}
+
+// 유형 4: 보스 문제 - 같은 의미 계열 단어 묶음 고르기
+function makeBossQuestion() {
+  const h = getRandom(hanjaDB);
+  const others = getOtherHanja(h, 3);
+
+  // 올바른 묶음: 같은 한자 계열 단어 3개
+  const correctGroup = shuffle(h.words).slice(0, 3).join(" / ");
+  // 오답 묶음들: 다른 한자들 단어 묶음
+  const wrongGroups = others.map(o => shuffle(o.words).slice(0, 3).join(" / "));
+  // 혼합 묶음 (추가 오답)
+  const mixedGroup = [
+    getRandom(h.words),
+    getRandom(others[0]?.words || h.words),
+    getRandom(others[1]?.words || h.words)
+  ].join(" / ");
+
+  return {
+    type: "boss",
+    typeName: "⚔️ 보스 문제",
+    badgeClass: "badge-boss",
+    hanjaDisplay: "🤔",
+    question: `'${h.hanja}'(${h.meaning}) 계열 단어가 모두 맞는 묶음은?`,
+    choices: shuffle([correctGroup, wrongGroups[0], wrongGroups[1] || mixedGroup, mixedGroup]),
+    answer: correctGroup,
+  };
+}
+
+// 레벨에 따라 문제 유형 결정 (높은 레벨 = 어려운 문제 비중 증가)
+function generateQuestion() {
+  const level = player.level;
+  let pool;
+
+  if (level <= 2) {
+    // 초반: 기본 문제 위주
+    pool = [makeBasicQuestion, makeBasicQuestion, makeBasicQuestion, makeWordCheckQuestion];
+  } else if (level <= 4) {
+    // 중반: 기본 + 함정 + 문맥
+    pool = [makeBasicQuestion, makeWordCheckQuestion, makeWordCheckQuestion, makeContextQuestion];
+  } else {
+    // 후반: 모든 유형 + 보스 등장
+    pool = [makeBasicQuestion, makeWordCheckQuestion, makeContextQuestion, makeBossQuestion];
+  }
+
+  return getRandom(pool)();
+}
+
+/* ===================================================
+   👹 몬스터 생성 함수
+   =================================================== */
+function spawnMonster() {
+  const level = player.level;
+  // 레벨에 따라 몬스터 강도 단계 결정
+  const tierIndex = Math.min(Math.floor((level - 1) / 2), monsterTypes.length - 1);
+  const base = monsterTypes[tierIndex];
+  const prefix = getRandom(elementPrefixes);
+
+  monster.name = prefix + " " + base.name;
+  monster.sprite = base.sprite;
+  // 레벨이 높을수록 HP도 증가
+  monster.maxHp = base.baseHp + (level - 1) * 15;
+  monster.hp = monster.maxHp;
+  // 몬스터 공격력도 레벨에 비례
+  monster.attack = 8 + level * 3;
+
+  // UI 업데이트
+  document.getElementById('monster-name').textContent = monster.name;
+  document.getElementById('monster-sprite').textContent = monster.sprite;
+  updateMonsterUI();
+
+  showBattleLog(`👹 ${monster.name} 등장!`, 'info');
+}
+
+/* ===================================================
+   🖼️ UI 업데이트 함수들
+   =================================================== */
+function updatePlayerUI() {
+  const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
+  const expPercent = (player.exp / player.expToNext) * 100;
+
+  document.getElementById('hp-bar').style.width = hpPercent + '%';
+  document.getElementById('hp-text').textContent = `${player.hp} / ${player.maxHp}`;
+  document.getElementById('exp-bar').style.width = expPercent + '%';
+  document.getElementById('exp-text').textContent = `${player.exp} / ${player.expToNext}`;
+  document.getElementById('level-display').textContent = `Lv.${player.level}`;
+  document.getElementById('streak-display').textContent = streak;
+}
+
+function updateMonsterUI() {
+  const percent = Math.max(0, (monster.hp / monster.maxHp) * 100);
+  document.getElementById('monster-hp-bar').style.width = percent + '%';
+  document.getElementById('monster-hp-text').textContent = `${monster.hp} / ${monster.maxHp}`;
+}
+
+// 전투 로그 메시지 표시
+function showBattleLog(msg, type = 'info') {
+  const el = document.getElementById('battle-log');
+  el.textContent = msg;
+  el.className = 'battle-log show ' + type;
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => {
+    el.className = 'battle-log';
+  }, 2500);
+}
+
+/* ===================================================
+   📋 문제 렌더링 함수
+   =================================================== */
+function renderQuestion(q) {
+  currentQuestion = q;
+  isAnswering = true;
+
+  // 배지 & 유형명
+  const badge = document.getElementById('q-type-badge');
+  badge.textContent = q.typeName;
+  badge.className = 'question-type-badge ' + q.badgeClass;
+
+  // 한자 표시 (줄바꿈 처리)
+  const hanjaEl = document.getElementById('q-hanja');
+  hanjaEl.innerHTML = q.hanjaDisplay.replace(/\n/g, '<br>');
+
+  // 문제 텍스트
+  document.getElementById('q-text').textContent = q.question;
+
+  // 선택지 버튼 4개 동적 생성
+  const grid = document.getElementById('choices-grid');
+  grid.innerHTML = '';
+  q.choices.forEach((choice, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice;
+    btn.onclick = () => handleAnswer(choice, btn);
+    grid.appendChild(btn);
+  });
+}
+
+/* ===================================================
+   ✅ 정답 처리 함수
+   =================================================== */
+function handleAnswer(selected, btnEl) {
+  if (!isAnswering) return; // 중복 클릭 방지
+  isAnswering = false;
+  initAudio(); // 첫 클릭 시 AudioContext 초기화
+
+  const isCorrect = selected === currentQuestion.answer;
+
+  // 모든 버튼 비활성화 + 정답 표시
+  const allBtns = document.querySelectorAll('.choice-btn');
+  allBtns.forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === currentQuestion.answer) btn.classList.add('correct-ans');
+    else if (btn === btnEl && !isCorrect) btn.classList.add('wrong-ans');
+  });
+
+  if (isCorrect) {
+    // 🎯 정답!
+    streak++;
+    maxStreak = Math.max(maxStreak, streak);
+    playSound('correct');
+
+    const bonus = streak >= 3 ? ` (+연속 보너스!)` : '';
+    showBattleLog(`⚔️ 정답! 몬스터에게 ${player.attack}의 데미지!${bonus}`, 'correct');
+
+    // 몬스터 HP 감소 (연속 정답 보너스)
+    const bonusDmg = streak >= 3 ? Math.floor(player.attack * 0.5) : 0;
+    monster.hp = Math.max(0, monster.hp - player.attack - bonusDmg);
+    updateMonsterUI();
+
+    // 몬스터 흔들림 애니메이션
+    const sprite = document.getElementById('monster-sprite');
+    sprite.classList.remove('monster-shake');
+    void sprite.offsetWidth; // 강제 리플로우로 애니메이션 재시작
+    sprite.classList.add('monster-shake');
+
+    setTimeout(() => {
+      if (monster.hp <= 0) {
+        // 몬스터 처치!
+        handleMonsterKill();
+      } else {
+        // 다음 문제
+        renderQuestion(generateQuestion());
+      }
+    }, 800);
+
+  } else {
+    // ❌ 오답
+    streak = 0;
+    playSound('wrong');
+    showBattleLog(`💥 오답! ${monster.name}의 반격! ${monster.attack}의 데미지!`, 'wrong');
+
+    // 플레이어 HP 감소
+    player.hp = Math.max(0, player.hp - monster.attack);
+    updatePlayerUI();
+
+    // 플레이어 패널 점멸 애니메이션
+    const panel = document.getElementById('player-panel');
+    panel.classList.remove('player-flash');
+    void panel.offsetWidth;
+    panel.classList.add('player-flash');
+
+    setTimeout(() => {
+      panel.classList.remove('player-flash');
+      if (player.hp <= 0) {
+        // 게임 오버
+        showGameOver();
+      } else {
+        // 다음 문제
+        renderQuestion(generateQuestion());
+      }
+    }, 900);
+  }
+
+  updatePlayerUI();
+  saveProgress();
+}
+
+/* ===================================================
+   🏆 몬스터 처치 처리
+   =================================================== */
+function handleMonsterKill() {
+  killCount++;
+  playSound('kill');
+
+  // EXP 획득 (레벨이 높을수록 많이)
+  const expGain = 15 + player.level * 5;
+  player.exp += expGain;
+
+  showBattleLog(`🏆 ${monster.name} 처치! +${expGain} EXP 획득!`, 'correct');
+
+  // 레벨업 체크
+  if (player.exp >= player.expToNext) {
+    setTimeout(() => {
+      handleLevelUp();
+    }, 600);
+  } else {
+    // 다음 몬스터
+    setTimeout(() => {
+      spawnMonster();
+      renderQuestion(generateQuestion());
+    }, 1000);
+  }
+
+  updatePlayerUI();
+  saveProgress();
+}
+
+/* ===================================================
+   ⬆️ 레벨업 처리
+   =================================================== */
+const MAX_LEVEL = 10; // 🎯 최대 레벨 (엔딩 조건)
+
+function handleLevelUp() {
+  player.level++;
+  player.exp = player.exp - player.expToNext;
+  player.expToNext = Math.floor(player.expToNext * 1.5);
+
+  const hpBonus = 20;
+  const atkBonus = 8;
+  player.maxHp += hpBonus;
+  player.hp = player.maxHp;
+  player.attack += atkBonus;
+
+  playSound('levelup');
+  updatePlayerUI();
+  saveProgress();
+
+  // 🎉 Lv.10 달성 시 엔딩!
+  if (player.level >= MAX_LEVEL) {
+    setTimeout(() => {
+      showEnding();
+    }, 800);
+    return;
+  }
+
+  const overlay = document.getElementById('levelup-overlay');
+  const desc = document.getElementById('levelup-desc');
+  desc.innerHTML = `레벨 ${player.level} 도달!<br>❤️ 최대 HP +${hpBonus} | ⚔️ 공격력 +${atkBonus}<br>✨ HP 완전 회복!`;
+  overlay.style.display = 'flex';
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    spawnMonster();
+    renderQuestion(generateQuestion());
+  }, 2500);
+}
+
+/* ===================================================
+   🏆 엔딩 화면 표시
+   =================================================== */
+function showEnding() {
+  // 효과음: 레벨업 두 번 울리기
+  playSound('levelup');
+  setTimeout(() => playSound('levelup'), 400);
+
+  document.getElementById('ending-kills').textContent = killCount;
+  document.getElementById('ending-streak').textContent = maxStreak;
+
+  // 배운 한자 칩 렌더링
+  const hanjaContainer = document.getElementById('ending-hanjas');
+  hanjaContainer.innerHTML = hanjaDB.map(h =>
+    `<span class="ending-hanja-chip">${h.hanja} ${h.meaning}</span>`
+  ).join('');
+
+  document.getElementById('ending-screen').style.display = 'flex';
+  clearProgress(); // 엔딩 후 저장 초기화
+}
+
+/* ===================================================
+   💀 게임 오버 처리
+   =================================================== */
+function showGameOver() {
+  document.getElementById('final-level').textContent = player.level;
+  document.getElementById('final-kills').textContent = killCount;
+  document.getElementById('final-streak').textContent = maxStreak;
+
+  const screen = document.getElementById('gameover-screen');
+  screen.style.display = 'flex';
+}
+
+/* ===================================================
+   🔄 게임 재시작
+   =================================================== */
+function restartGame() {
+  clearProgress();
+
+  // 상태 초기화
+  player = { hp: 100, maxHp: 100, attack: 30, level: 1, exp: 0, expToNext: 50 };
+  streak = 0;
+  maxStreak = 0;
+  killCount = 0;
+
+  document.getElementById('gameover-screen').style.display = 'none';
+  document.getElementById('ending-screen').style.display = 'none';
+
+  spawnMonster();
+  renderQuestion(generateQuestion());
+  updatePlayerUI();
+}
+
+/* ===================================================
+   🚀 게임 시작
+   =================================================== */
+// 닉네임 저장 변수
+let playerNickname = "용사";
+
+function startGame() {
+  // 닉네임 처리: 입력값이 있으면 사용, 없으면 기본값 "용사"
+  const inputEl = document.getElementById('nickname-input');
+  const inputVal = inputEl ? inputEl.value.trim() : '';
+  playerNickname = inputVal.length > 0 ? inputVal : "용사";
+
+  // 상태바 닉네임 표시 업데이트
+  document.getElementById('player-nickname').textContent = playerNickname;
+
+  // 시작 화면 숨기고 게임 화면 표시
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+
+  // 저장된 진행 불러오기
+  loadProgress();
+  updatePlayerUI();
+
+  // 첫 몬스터 & 문제 생성
+  spawnMonster();
+  renderQuestion(generateQuestion());
+}
+</script>
+</body>
+</html>
