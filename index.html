@@ -613,6 +613,100 @@
     border-color: var(--accent-gold);
     box-shadow: 0 0 20px rgba(245,200,66,0.25);
   }
+
+  /* ===================================
+     오답 노트 & 탭 시스템
+     =================================== */
+  .result-tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .tab-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background: rgba(245,200,66,0.1);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* 오답 카드 */
+  .wrong-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .wrong-list::-webkit-scrollbar { width: 3px; }
+  .wrong-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .wrong-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(232,67,67,0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+  .wrong-card .wc-q { color: var(--text-main); font-weight: 700; }
+  .wrong-card .wc-my  { color: var(--accent-red); }
+  .wrong-card .wc-ans { color: var(--accent-green); }
+
+  .no-wrong {
+    color: var(--accent-green);
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 16px 0;
+    text-align: center;
+  }
+
+  /* 오답 다시풀기 버튼 */
+  .retry-wrong-btn {
+    background: linear-gradient(135deg, #e84343, #c0392b);
+    color: #fff;
+    border: none;
+    padding: 13px 36px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 0 20px rgba(232,67,67,0.35);
+    margin-top: 4px;
+  }
+  .retry-wrong-btn:hover { transform: scale(1.04); }
+  .retry-wrong-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* 오답 다시풀기 모드 배너 */
+  .retry-banner {
+    display: none;
+    background: rgba(232,67,67,0.15);
+    border: 1px solid rgba(232,67,67,0.5);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent-red);
+    text-align: center;
+    margin-bottom: -4px;
+  }
 </style>
 </head>
 <body>
@@ -676,6 +770,11 @@
     </div>
   </div>
 
+  <!-- 오답 다시풀기 모드 배너 -->
+  <div class="retry-banner" id="retry-banner">
+    📝 오답 다시풀기 모드 — 틀린 문제만 출제 중!
+  </div>
+
   <!-- 👹 중앙: 몬스터 영역 -->
   <div class="monster-panel">
     <div class="monster-name" id="monster-name">로딩중...</div>
@@ -715,7 +814,36 @@
     최대 연속 정답: <span id="ending-streak">0</span>회<br>
     배운 한자: <span>25자</span>
   </div>
-  <div class="ending-hanjas" id="ending-hanjas"></div>
+  <!-- 탭 버튼 -->
+  <div class="result-tabs">
+    <button class="tab-btn active" onclick="switchTab('ed','stats')">🏆 결과</button>
+    <button class="tab-btn" onclick="switchTab('ed','hanjas')">漢字 목록</button>
+    <button class="tab-btn" onclick="switchTab('ed','wrong')">❌ 오답 노트</button>
+  </div>
+
+  <!-- 결과 탭 -->
+  <div class="tab-panel active" id="ed-tab-stats">
+    <div class="ending-stats">
+      최종 레벨: <span>Lv.10</span><br>
+      처치한 몬스터: <span id="ending-kills">0</span>마리<br>
+      최대 연속 정답: <span id="ending-streak">0</span>회<br>
+      배운 한자: <span>25자</span>
+    </div>
+  </div>
+
+  <!-- 한자 목록 탭 -->
+  <div class="tab-panel" id="ed-tab-hanjas">
+    <div class="ending-hanjas" id="ending-hanjas"></div>
+  </div>
+
+  <!-- 오답 탭 -->
+  <div class="tab-panel" id="ed-tab-wrong">
+    <div class="wrong-list" id="ed-wrong-list"></div>
+  </div>
+
+  <button class="retry-wrong-btn" id="ed-retry-btn" onclick="startRetryMode('ending')" disabled>
+    📝 오답만 다시 풀기
+  </button>
   <button class="ending-btn" onclick="restartGame()">🔄 처음부터 다시!</button>
 </div>
 
@@ -724,12 +852,31 @@
      =========================== -->
 <div id="gameover-screen">
   <div class="gameover-title">💀 게임 오버</div>
-  <div class="gameover-stats">
-    도달 레벨: <span id="final-level">1</span><br>
-    처치한 몬스터: <span id="final-kills">0</span>마리<br>
-    최대 연속 정답: <span id="final-streak">0</span>회
+
+  <!-- 탭 버튼 -->
+  <div class="result-tabs">
+    <button class="tab-btn active" onclick="switchTab('go','stats')">📊 결과</button>
+    <button class="tab-btn" onclick="switchTab('go','wrong')">❌ 오답 노트</button>
   </div>
-  <button class="restart-btn" onclick="restartGame()">🔄 다시 도전!</button>
+
+  <!-- 결과 탭 -->
+  <div class="tab-panel active" id="go-tab-stats">
+    <div class="gameover-stats">
+      도달 레벨: <span id="final-level">1</span><br>
+      처치한 몬스터: <span id="final-kills">0</span>마리<br>
+      최대 연속 정답: <span id="final-streak">0</span>회
+    </div>
+  </div>
+
+  <!-- 오답 탭 -->
+  <div class="tab-panel" id="go-tab-wrong">
+    <div class="wrong-list" id="go-wrong-list"></div>
+  </div>
+
+  <button class="retry-wrong-btn" id="go-retry-btn" onclick="startRetryMode('gameover')" disabled>
+    📝 오답만 다시 풀기
+  </button>
+  <button class="restart-btn" onclick="restartGame()">🔄 처음부터 다시!</button>
 </div>
 
 <!-- ===========================
@@ -890,6 +1037,102 @@ let isAnswering = true;       // 현재 답변 가능 상태인지
 let killCount = 0;            // 처치한 몬스터 수
 let streak = 0;               // 연속 정답 수
 let maxStreak = 0;            // 최대 연속 정답 수
+
+/* ===================================================
+   ❌ 오답 기록 시스템
+   =================================================== */
+let wrongAnswers = [];       // 이번 플레이의 오답 기록
+let isRetryMode = false;     // 오답 다시풀기 모드 여부
+let retryQueue = [];         // 다시풀 오답 큐
+
+// 오답 기록 함수 (유저가 제안한 구조 그대로!)
+function recordWrong(question, userAnswer, correct) {
+  // 같은 문제가 이미 기록돼 있으면 중복 저장 안 함
+  const alreadyIn = wrongAnswers.some(w => w.question === question);
+  if (!alreadyIn) {
+    wrongAnswers.push({ question, userAnswer, correct });
+  }
+}
+
+// 탭 전환 함수 (go: 게임오버, ed: 엔딩)
+function switchTab(prefix, tabName) {
+  // 해당 prefix의 모든 탭 패널 숨기기
+  document.querySelectorAll(`[id^="${prefix}-tab-"]`).forEach(el => el.classList.remove('active'));
+  // 해당 prefix의 모든 탭 버튼 비활성화
+  const screen = prefix === 'go' ? document.getElementById('gameover-screen') : document.getElementById('ending-screen');
+  screen.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  // 선택한 탭 활성화
+  document.getElementById(`${prefix}-tab-${tabName}`).classList.add('active');
+  // 버튼도 active
+  const btns = screen.querySelectorAll('.tab-btn');
+  btns.forEach(btn => {
+    if (btn.getAttribute('onclick').includes(`'${tabName}'`)) btn.classList.add('active');
+  });
+}
+
+// 오답 목록 HTML 렌더링 (listEl: DOM 요소)
+function renderWrongList(listEl) {
+  if (wrongAnswers.length === 0) {
+    listEl.innerHTML = '<div class="no-wrong">✅ 오답이 없습니다! 완벽해요!</div>';
+    return;
+  }
+  listEl.innerHTML = wrongAnswers.map((w, i) =>
+    `<div class="wrong-card">
+      <div class="wc-q">❓ ${i+1}. ${w.question}</div>
+      <div class="wc-my">내 답: ${w.userAnswer}</div>
+      <div class="wc-ans">✅ 정답: ${w.correct}</div>
+    </div>`
+  ).join('');
+}
+
+// 오답 다시풀기 모드 시작
+function startRetryMode(from) {
+  if (wrongAnswers.length === 0) return;
+
+  // 오답 문제들을 retryQueue에 복사 (셔플)
+  retryQueue = shuffle([...wrongAnswers]);
+  isRetryMode = true;
+  wrongAnswers = []; // 다시풀기 중 새 오답 다시 기록
+
+  // 화면 숨기기
+  document.getElementById('gameover-screen').style.display = 'none';
+  document.getElementById('ending-screen').style.display = 'none';
+
+  // 배너 표시
+  document.getElementById('retry-banner').style.display = 'block';
+
+  // HP 절반 회복 (인심 써서 ^^)
+  player.hp = Math.ceil(player.maxHp / 2);
+  updatePlayerUI();
+
+  // 오답 문제 첫 번째 출제
+  popRetryQuestion();
+}
+
+// 큐에서 오답 꺼내서 출제
+function popRetryQuestion() {
+  if (retryQueue.length === 0) {
+    // 다 풀었으면!
+    isRetryMode = false;
+    document.getElementById('retry-banner').style.display = 'none';
+
+    // 결과 다시 보여주기 (새 오답 포함해서)
+    renderWrongList(document.getElementById('go-wrong-list'));
+    const retryBtn = document.getElementById('go-retry-btn');
+    retryBtn.disabled = wrongAnswers.length === 0;
+    document.getElementById('gameover-screen').style.display = 'flex';
+    showBattleLog('', 'info');
+    return;
+  }
+
+  // 큐에서 꺼내서 문제 형식으로 재구성
+  const item = retryQueue.pop();
+
+  // 오답 기록의 question 문자열에서 문제 재생성
+  // wrongAnswers에 저장된 원본 question 객체 자체를 저장하도록 recordWrong 수정됨
+  currentQuestion = item.rawQuestion;
+  renderQuestion(currentQuestion);
+}
 
 /* ===================================================
    💾 저장 / 불러오기 (localStorage)
@@ -1181,12 +1424,16 @@ function handleAnswer(selected, btnEl) {
     sprite.classList.add('monster-shake');
 
     setTimeout(() => {
-      if (monster.hp <= 0) {
-        // 몬스터 처치!
+      if (monster.hp <= 0 && !isRetryMode) {
+        // 몬스터 처치! (오답 다시풀기 모드에선 몬스터 처치 없음)
         handleMonsterKill();
       } else {
-        // 다음 문제
-        renderQuestion(generateQuestion());
+        // 다음 문제 (오답 다시풀기 모드면 큐에서, 아니면 랜덤)
+        if (isRetryMode) {
+          popRetryQuestion();
+        } else {
+          renderQuestion(generateQuestion());
+        }
       }
     }, 800);
 
@@ -1195,6 +1442,15 @@ function handleAnswer(selected, btnEl) {
     streak = 0;
     playSound('wrong');
     showBattleLog(`💥 오답! ${monster.name}의 반격! ${monster.attack}의 데미지!`, 'wrong');
+
+    // 📝 오답 기록 (문제 텍스트, 내 답, 정답 저장)
+    recordWrong(
+      currentQuestion.question,   // 문제
+      selected,                   // 내가 선택한 답
+      currentQuestion.answer,     // 정답
+    );
+    // rawQuestion: 오답 다시풀기에서 원본 문제 객체 재사용
+    wrongAnswers[wrongAnswers.length - 1].rawQuestion = currentQuestion;
 
     // 플레이어 HP 감소
     player.hp = Math.max(0, player.hp - monster.attack);
@@ -1210,10 +1466,18 @@ function handleAnswer(selected, btnEl) {
       panel.classList.remove('player-flash');
       if (player.hp <= 0) {
         // 게임 오버
+        if (isRetryMode) {
+          isRetryMode = false;
+          document.getElementById('retry-banner').style.display = 'none';
+        }
         showGameOver();
       } else {
-        // 다음 문제
-        renderQuestion(generateQuestion());
+        // 다음 문제 (오답 다시풀기 모드면 큐에서, 아니면 랜덤)
+        if (isRetryMode) {
+          popRetryQuestion();
+        } else {
+          renderQuestion(generateQuestion());
+        }
       }
     }, 900);
   }
@@ -1309,8 +1573,21 @@ function showEnding() {
     `<span class="ending-hanja-chip">${h.hanja} ${h.meaning}</span>`
   ).join('');
 
+  // 오답 목록 렌더링
+  renderWrongList(document.getElementById('ed-wrong-list'));
+
+  // 오답 있으면 다시풀기 버튼 활성화
+  const retryBtn = document.getElementById('ed-retry-btn');
+  retryBtn.disabled = wrongAnswers.length === 0;
+  retryBtn.textContent = wrongAnswers.length > 0
+    ? `📝 오답 ${wrongAnswers.length}개 다시 풀기`
+    : '📝 오답 없음 (완벽!)';
+
+  // 탭 초기화 (결과 탭으로)
+  switchTab('ed', 'stats');
+
   document.getElementById('ending-screen').style.display = 'flex';
-  clearProgress(); // 엔딩 후 저장 초기화
+  clearProgress();
 }
 
 /* ===================================================
@@ -1320,6 +1597,19 @@ function showGameOver() {
   document.getElementById('final-level').textContent = player.level;
   document.getElementById('final-kills').textContent = killCount;
   document.getElementById('final-streak').textContent = maxStreak;
+
+  // 오답 목록 렌더링
+  renderWrongList(document.getElementById('go-wrong-list'));
+
+  // 오답 있으면 다시풀기 버튼 활성화
+  const retryBtn = document.getElementById('go-retry-btn');
+  retryBtn.disabled = wrongAnswers.length === 0;
+  retryBtn.textContent = wrongAnswers.length > 0
+    ? `📝 오답 ${wrongAnswers.length}개 다시 풀기`
+    : '📝 오답 없음 (완벽!)';
+
+  // 탭 초기화 (결과 탭으로)
+  switchTab('go', 'stats');
 
   const screen = document.getElementById('gameover-screen');
   screen.style.display = 'flex';
@@ -1336,6 +1626,10 @@ function restartGame() {
   streak = 0;
   maxStreak = 0;
   killCount = 0;
+  wrongAnswers = [];
+  retryQueue = [];
+  isRetryMode = false;
+  document.getElementById('retry-banner').style.display = 'none';
 
   document.getElementById('gameover-screen').style.display = 'none';
   document.getElementById('ending-screen').style.display = 'none';
